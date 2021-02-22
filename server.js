@@ -23,17 +23,6 @@ app.use(function (req, res, next) {
     next();
 });
 
-if (process.env.PROD) {
-    app.use(express.static(path.join(__dirname, './build')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, './build/index.html'), (err) => {
-            if (err) {
-              res.status(500).send(err)
-            }
-        });
-    });
-}
-
 io.on('connection', socket => {
     socket.emit('your id', socket.id);
 
@@ -144,5 +133,16 @@ app.get('/room/:roomID', (req, res) => {
 
     res.json({ roomName, roomComms, roomType });
 })
+
+if (process.env.PROD) {
+    app.use(express.static(path.join(__dirname, './client/build')));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, './client/build/index.html'), (err) => {
+            if (err) {
+              res.status(500).send(err)
+            }
+        });
+    });
+}
 
 server.listen(port, () => console.log(`server runnning on port ${port}`));
