@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const server = http.createServer(app);
 const io = socket(server);
-const port = process.env.PORT || 8000;
+const port = 8000 || process.env.PORT;
 
 let hostRoom = { roomName: '', roomComms: '', roomType: '' };
 const users = {};
@@ -87,11 +87,17 @@ io.on('connection', socket => {
         io.emit('message', body)
     })
 
+    socket.on('all users in room', () => {
+        const roomID = socketToRoom[socket.id];
+
+        socket.emit("all users in room", users[roomID]);
+    })
+
     socket.on('disconnect', () => {
         const roomID = socketToRoom[socket.id];
         let room = users[roomID];
         if (room) {
-            room = room.filter(id => id !== socket.id);
+            room = room.filter(user => user.id !== socket.id);
             users[roomID] = room;
         }
 
@@ -103,7 +109,6 @@ io.on('connection', socket => {
         console.dir(socketToRoom);
 
         socket.broadcast.emit('user left', socket.id);
-        socket.emit("all users in room", users[roomID]);
     });
 
 });
@@ -127,14 +132,14 @@ app.post('/', (req, res) => {
 
 app.get('/room/:roomID', (req, res) => {
     const { roomID } = req.params;
-    const { roomName, roomComms, roomType } = rooms[roomID];
+    const { roomName, roomComms, roomType } = hostRoom;
 
     console.log(`GET /room/${roomID}`);
     console.dir(roomName);
     console.log('roomName up, roomType down');
     console.dir(roomType);
 
-    res.json({roomName, roomComms, roomType});
+    res.json({ roomName, roomComms, roomType });
 })
 
 server.listen(port, () => console.log(`server runnning on port ${port}`));
