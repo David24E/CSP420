@@ -7,11 +7,12 @@ const bodyParser = require('body-parser');
 const app = express();
 const server = http.createServer(app);
 const io = socket(server);
-const port = 8000 || process.env.PORT;
+const port = process.env.PORT || 8000;
 
 let hostRoom = { roomName: '', roomComms: '', roomType: '' };
-const users = {};
+const socketToRoom = {};
 const rooms = {};
+const users = {};
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -28,8 +29,6 @@ if (process.env.PROD) {
         res.sendFile(path.join(_dirname, './client/build/index.html'));
     });
 }
-
-const socketToRoom = {};
 
 io.on('connection', socket => {
     socket.emit('your id', socket.id);
