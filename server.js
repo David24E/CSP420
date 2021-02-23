@@ -122,6 +122,7 @@ app.post('/', (req, res) => {
     res.send(`POST request received.`);
 })
 
+/* 
 app.get('/room/:roomID', (req, res) => {
     const { roomID } = req.params;
     const { roomName, roomComms, roomType } = hostRoom;
@@ -133,6 +134,7 @@ app.get('/room/:roomID', (req, res) => {
 
     res.json({ roomName, roomComms, roomType });
 })
+ */
 
 if (process.env.PROD) {
     app.use(express.static(path.join(__dirname, './client/build')));
