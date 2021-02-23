@@ -45,9 +45,9 @@ const CreateRoom = (props) => {
 
         fetch(url, {
             method: "POST",
-            headers: {
+            /* headers: {
                 'Content-type': 'application/json'
-            },
+            }, */
             body: JSON.stringify(createRoomState)
         })
         .then((result) => console.log(result.text()))
