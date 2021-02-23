@@ -111,22 +111,24 @@ const Room = (props) => {
 
 
     useEffect(() => {
-        fetch(`/room/${roomID}`)
-        .then((response) => {
-            console.log('response.json()' + response.json());
-            console.dir(response.json());
-            setRoomConfig(response.json());
-            // response.json();
-        })
-        /* .then((data) => {
-            // this.setState({items: data.items});
-            console.log('data' + data);
-            console.dir(data);
-            setRoomConfig(data);
-        }) */
-        .catch((err) => {
-            throw new Error(err);
-        });
+        if (isMainReady) {
+            fetch(`/room/${roomID}`)
+                .then((response) => {
+                    console.log('response.json()' + response.json());
+                    console.dir(response.json());
+                    setRoomConfig(response.json());
+                    // response.json();
+                })
+                /* .then((data) => {
+                    // this.setState({items: data.items});
+                    console.log('data' + data);
+                    console.dir(data);
+                    setRoomConfig(data);
+                }) */
+                .catch((err) => {
+                    throw new Error(err);
+                });
+        }
     }, []);
 
 
@@ -448,7 +450,7 @@ const Room = (props) => {
                         <Toolbar />
 
                         <div id="player" />
-                        <br/>
+                        <br />
                         <button onClick={stopVideo}>Stop Video</button>
                         <button onClick={playVideo}>Play Video</button>
                         <input type="text" placeholder="video link" value={videoID} onChange={e => setVideoID(e.target.value)} />
