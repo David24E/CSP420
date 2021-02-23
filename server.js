@@ -35,7 +35,7 @@ io.on('connection', socket => {
             }
 
             if (users[payload.roomID].some(user => { return (user.nickname === payload.nickname) })) {
-                callback(false);
+                callback(false, hostRoom);
             } else {
                 users[payload.roomID].push({ id: socket.id, nickname: payload.nickname });
             }
@@ -43,7 +43,7 @@ io.on('connection', socket => {
             users[payload.roomID] = [{ id: socket.id, nickname: payload.nickname }];
         }
 
-        callback(true);
+        callback(true, hostRoom);
         socket.nickname = payload.nickname;
 
         socketToRoom[socket.id] = payload.roomID;

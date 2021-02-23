@@ -110,26 +110,23 @@ const Room = (props) => {
     const [isMainReady, setIsMainReady] = useState(false);
 
 
-    useEffect(() => {
+    /* useEffect(() => {
         if (isMainReady) {
             fetch(`/room/${roomID}`)
-                .then((response) => {
-                    console.log('response.json()' + response.json());
-                    console.dir(response.json());
-                    setRoomConfig(response.json());
-                    // response.json();
+                .then((response) => {setRoomConfig(response.json());
+                    response.json();
                 })
-                /* .then((data) => {
+                .then((data) => {
                     // this.setState({items: data.items});
                     console.log('data' + data);
                     console.dir(data);
                     setRoomConfig(data);
-                }) */
+                })
                 .catch((err) => {
                     throw new Error(err);
                 });
         }
-    }, []);
+    }, []); */
 
 
     useEffect(() => {
@@ -388,13 +385,14 @@ const Room = (props) => {
 
         socketRef.current.connect();
 
-        socketRef.current.emit("join room", { roomID, nickname: yourNickname }, (data) => {
-            if (data) {
+        socketRef.current.emit("join room", { roomID, nickname: yourNickname }, (uniqueNickname, hostRoom) => {
+            if (uniqueNickname) {
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                     if (userVideoRef.current) {
                         userVideoRef.current.srcObject = stream;
                     }
                 })
+                setRoomConfig(hostRoom);
                 setIsMainReady(true);
                 setYourUser(yourUserState);
             } else {
