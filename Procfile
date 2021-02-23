@@ -1,1 +1,1 @@
-web: npm start
+web: PROD=true node server.js
