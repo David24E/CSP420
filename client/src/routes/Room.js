@@ -111,17 +111,19 @@ const Room = (props) => {
 
 
     useEffect(() => {
-        fetch(`/room/${roomID}`).then((response) => {
-            return response.json();
-        }).then((data) => {
+        fetch(`/room/${roomID}`)
+        .then((response) => {
+            response.json();
+        })
+        .then((data) => {
             // this.setState({items: data.items});
             console.log('data' + data);
             console.dir(data);
             setRoomConfig(data);
-        });
-        /* .catch((err) => {
+        })
+        .catch((err) => {
             throw new Error(err);
-        }); */
+        });
     }, []);
 
 
