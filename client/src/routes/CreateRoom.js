@@ -28,7 +28,6 @@ const useStyles = makeStyles({
 
 const roomCommsConfigurations = ['Text Chat', 'Video Chat'];
 const roomTypeConfigurations = ['Watch Together', 'Broadcast'];
-const url = process.env.URL || 'http://localhost:8000';
 
 const CreateRoom = (props) => {
     const classes = useStyles();
@@ -43,11 +42,11 @@ const CreateRoom = (props) => {
         const roomID = uuid();
         const createRoomState = { roomID, roomName, roomType, roomComms };
 
-        fetch(url, {
+        fetch('/', {
             method: "POST",
-            /* headers: {
+            headers: {
                 'Content-type': 'application/json'
-            }, */
+            },
             body: JSON.stringify(createRoomState)
         })
         .then((result) => console.log(result.text()))
