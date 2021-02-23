@@ -112,7 +112,7 @@ const Room = (props) => {
 
     useEffect(() => {
         fetch(`/room/${roomID}`).then((response) => {
-            response.json();
+            return response.json();
         }).then((data) => {
             // this.setState({items: data.items});
             console.log('data' + data);
@@ -122,7 +122,7 @@ const Room = (props) => {
         /* .catch((err) => {
             throw new Error(err);
         }); */
-    }, [roomID]);
+    }, []);
 
 
     useEffect(() => {
