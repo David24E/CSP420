@@ -1,1 +1,1 @@
-web: PROD=true node server.js
+web: node server.js
