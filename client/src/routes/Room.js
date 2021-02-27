@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import PropTypes from 'prop-types';
 import Peer from "simple-peer";
-import { AppBar, Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, CssBaseline, Divider, Drawer, Grid, LinearProgress, Modal, Slider, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
+import { AppBar, Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, CssBaseline, Divider, Drawer, Grid, LinearProgress, Slider, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
 import UsersList from "../components/userCommsSection/usersList/UsersList";
 import TextChatComms from "../components/userCommsSection/textChatComms/TextChatComms";
