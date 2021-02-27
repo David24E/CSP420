@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { makeStyles } from '@material-ui/core/styles';
+/* 
+import { Divider, IconButton } from "@material-ui/core";
+import MicOffIcon from '@material-ui/icons/MicOff';
+import MicIcon from '@material-ui/icons/Mic';
+import VideocamOffIcon from '@material-ui/icons/VideocamOff';
+import VideocamIcon from '@material-ui/icons/Videocam';
+ */
 
 const useStyles = makeStyles({
     vidWrapper: {
@@ -30,7 +37,20 @@ const useStyles = makeStyles({
         margin: 1,
         color: 'white',
         aligSelf: 'center',
-    }
+    },
+    /* 
+    videoChatControlsContainer: {
+        position: 'absolute',
+        margin: '8px 0px',
+        width: '93%',
+        bottom: '0px',
+        top: 'auto'
+    },
+    videoChatControls: {
+        marginTop: '8px',
+        width: '89%'
+    },
+     */
 });
 
 const Video = (props) => {
@@ -62,6 +82,11 @@ const VideoChatComms = (props) => {
     const classes = useStyles();
     const userVideoRef = useRef();
 
+    /* 
+    const [isAudioOn, setIsAudioOn] = useState(true);
+    const [isCamOn, setIsCamOn] = useState(true);
+    */
+
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             if (userVideoRef.current) {
@@ -70,18 +95,50 @@ const VideoChatComms = (props) => {
         })
     }, []);
 
+    /* 
+    const toggleAudio = () => {
+        if (userVideoRef.current != null && userVideoRef.current.getAudioTracks().length > 0) {
+            userVideoRef.current.getAudioTracks()[0].enabled = !isAudioOn;
+
+            setIsAudioOn(prevMute => !prevMute);
+        }
+    }
+
+    const toggleCam = () => {
+        if (userVideoRef.current != null && userVideoRef.current.getVideoTracks().length > 0) {
+            userVideoRef.current.getVideoTracks()[0].enabled = !isCamOn;
+
+            setIsCamOn(prevCamOn => !prevCamOn);
+        }
+    }
+    */
+
     return (
-        <div className={classes.vidWrapper}>
-            <div className={classes.vidContainer}>
-                <video className={classes.styledVideo} playsInline autoPlay muted ref={userVideoRef} />
-                <div className={classes.overlayContainer}>
-                    <div className={classes.overlay}>
-                        <p className={classes.topText}>You</p>
+        <>
+            <div className={classes.vidWrapper}>
+                <div className={classes.vidContainer}>
+                    <video className={classes.styledVideo} playsInline autoPlay muted ref={userVideoRef} />
+                    <div className={classes.overlayContainer}>
+                        <div className={classes.overlay}>
+                            <p className={classes.topText}>You</p>
+                        </div>
                     </div>
                 </div>
+                {props.peersRef.length > 0 ? props.peersRef.map((peer) => { return (<Video key={peer.peerID} peer={peer.peer} nickname={peer.peerNickname} />) }) : ''}
             </div>
-            {props.peersRef.length > 0 ? props.peersRef.map((peer) => { return (<Video key={peer.peerID} peer={peer.peer} nickname={peer.peerNickname} />)}) : ''}
-        </div>
+            
+            {/* <div className={classes.videoChatControlsContainer}>
+                <Divider />
+                <div id="videoChatControls" className={classes.videoChatControls}>
+                    <IconButton id="muteBtn" color="primary" aria-label="toggle-video-chat-mute" onClick={toggleAudio}>
+                        {isAudioOn ? <MicIcon /> : <MicOffIcon />}
+                    </IconButton>
+                    <IconButton id="camBtn" color="primary" aria-label="toggle-video-chat-cam" onClick={toggleCam}>
+                        {isCamOn ? <VideocamIcon /> : <VideocamOffIcon />}
+                    </IconButton>
+                </div>
+            </div> */}
+        </>
     );
 };
 

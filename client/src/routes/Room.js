@@ -11,6 +11,7 @@ import ReactPlayer from "react-player";
 import moment from "moment";
 
 const drawerWidth = '40%';
+// const maxDrawerWidth = 425;
 
 const useStyles = makeStyles((theme) => ({
     root: {
