@@ -56,13 +56,10 @@ const CreateRoom = (props) => {
     const handleTextFieldChange = (e) => {
         const { value, name } = e.target;
         if (name === 'roomName') {
-            console.log('value' + value)
             setRoomName(value);
         } else if (name === 'roomComms') {
-            console.log('value and name ' + value + ' ' + name);
             setRoomComms(value);
         } else if (name === 'roomType') {
-            console.log('value and name ' + value + ' ' + name);
             setRoomType(value);
         }
     }

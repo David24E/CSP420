@@ -2,13 +2,15 @@ import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import PropTypes from 'prop-types';
 import Peer from "simple-peer";
-import { AppBar, Box, Button, Card, CardActions, CardContent, CardHeader, CssBaseline, Divider, Drawer, Modal, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
+import { AppBar, Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, CssBaseline, Divider, Drawer, Grid, LinearProgress, Modal, Slider, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
-import UsersList from "../components/userCommsSection/usersList/usersList";
-import TextChatComms from "../components/userCommsSection/textChatComms/textChatComms";
-import VideoChatComms from "../components/userCommsSection/videoChatComms/videoChatComms";
+import UsersList from "../components/userCommsSection/usersList/UsersList";
+import TextChatComms from "../components/userCommsSection/textChatComms/TextChatComms";
+import VideoChatComms from "../components/userCommsSection/videoChatComms/VideoChatComms";
+import ReactPlayer from "react-player";
+import moment from "moment";
 
-const drawerWidth = 425;
+const drawerWidth = '40%';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -17,6 +19,9 @@ const useStyles = makeStyles((theme) => ({
     },
     appBar: {
         zIndex: theme.zIndex.drawer + 1,
+    },
+    title: {
+        flexGrow: 1,
     },
     drawer: {
         width: drawerWidth,
@@ -45,6 +50,17 @@ const useStyles = makeStyles((theme) => ({
     modalButton: {
         right: -310,
         marginTop: 22
+    },
+    videoCenterControls: {
+        width: '90%',
+    },
+    playerWrapper: {
+        width: 640,
+        height: 360,
+    },
+    reactPlayerStyle: {
+        marginBottom: 10,
+        background: 'rgba(0, 0, 0, .1)',
     },
 }));
 
@@ -91,8 +107,8 @@ const Room = (props) => {
 
     const socketRef = useRef();
     const peersRef = useRef([]);
-    const youtubePlayer = useRef();
     const userVideoRef = useRef();
+    const reactPlayer = useRef();
 
     const roomID = props.match.params.roomID;
 
@@ -100,34 +116,23 @@ const Room = (props) => {
     const [yourID, setYourID] = useState('');
     const [yourUser, setYourUser] = useState();
     const [message, setMessage] = useState('');
-    const [videoID, setVideoID] = useState('');
     const [messages, setMessages] = useState([]);
     const [currentTab, setCurrentTab] = useState(0);
     const [usersInRoom, setUsersInRoom] = useState([]);
     const [yourNickname, setYourNickname] = useState('');
     const [roomConfig, setRoomConfig] = useState({ roomName: `${roomID}`, roomComms: 'Text Chat', roomType: 'Watch Together' });
     const [nicknameFieldError, setNicknameFieldError] = useState(false);
-    const [isMainReady, setIsMainReady] = useState(false);
 
-
-    /* useEffect(() => {
-        if (isMainReady) {
-            fetch(`/room/${roomID}`)
-                .then((response) => {setRoomConfig(response.json());
-                    response.json();
-                })
-                .then((data) => {
-                    // this.setState({items: data.items});
-                    console.log('data' + data);
-                    console.dir(data);
-                    setRoomConfig(data);
-                })
-                .catch((err) => {
-                    throw new Error(err);
-                });
-        }
-    }, []); */
-
+    const [url, setUrl] = useState(null);
+    const [videoID, setVideoID] = useState("");
+    const [playing, setplaying] = useState(false);
+    const [volume, setVolume] = useState(0.8);
+    const [muted, setMuted] = useState(false);
+    const [played, setPlayed] = useState(0);
+    const [loaded, setLoaded] = useState(0);
+    const [seeking, setSeeking] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [playbackRate, setPlaybackRate] = useState(1.0);
 
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
@@ -203,25 +208,17 @@ const Room = (props) => {
                 if (currentUser) {
                     currentUser.nickname = `${currentUser.nickname}(You)`;
                 }
-
-                console.log('all users in room start users ');
-                console.dir(usersInRoom);
-                console.log('all users in room start PeersRef ');
-                console.dir(peersRef);
+                setYourUser(currentUser);
 
                 if (peersRef.current.length > 0) {
                     for (const user of users) {
                         const tempPeer = peersRef.current.find((peer) => !peer.peerNickname && (peer.peerID === user.id));
                         if (tempPeer) {
                             tempPeer.peerNickname = user.nickname;
+                            tempPeer.hostUser = user.hostUser;
                         }
                     }
                 }
-
-                console.log('all users in room end users ');
-                console.dir(users);
-                console.log('all users in room end PeersRef ');
-                console.dir(peersRef);
 
                 setUsersInRoom(users);
             })
@@ -232,8 +229,6 @@ const Room = (props) => {
 
             socketRef.current.on('user left', id => {
                 const peerObj = peersRef.current.find(p => p.peerID === id);
-                console.log('user leaving... ');
-                console.dir(peerObj);
 
                 if (peerObj) {
                     peerObj.peer.destroy();
@@ -242,11 +237,6 @@ const Room = (props) => {
                 const peers = peersRef.current.filter(p => p.peerID !== id);
                 peersRef.current = peers;
 
-                console.log('user left end PeersRef ');
-                console.dir(peersRef);
-                console.log('user left end Peers ');
-                console.dir(peers);
-
                 socketRef.current.emit("all users in room");
 
                 setPeers(peers);
@@ -254,23 +244,9 @@ const Room = (props) => {
 
         })
     }, []);
-
-
-    useEffect(() => {
-        console.log('USE EFFECT LAUNCHED');
-        if (isMainReady) {
-            console.log('USE EFFECT LAUNCHED');
-            const tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            var firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-            window.onYouTubeIframeAPIReady = loadVideoPlayer;
-        }
-    }, [isMainReady]);
-
+    
     const receivedMessage = (message) => {
         setMessages(oldMsgs => [...oldMsgs, message]);
-        console.log("receivedMessage ", messages);
     }
 
     const sendMessage = (e) => {
@@ -280,6 +256,7 @@ const Room = (props) => {
             body: message,
             id: yourID,
             nickname: yourNickname,
+            time: moment().format('h:mm a')
         };
         setMessage("");
         socketRef.current.emit("send message", messageObject);
@@ -290,7 +267,7 @@ const Room = (props) => {
     }
 
 
-    function handleTabChange(e, newValue) {
+    const handleTabChange = (e, newValue) => {
         socketRef.current.on("all users", users => {
             users.forEach(user => {
                 peersRef.current = [...peersRef.current, { id: user.id, nickname: user.nickname }]
@@ -299,38 +276,8 @@ const Room = (props) => {
 
         setCurrentTab(newValue)
     }
-
-    function loadVideoPlayer() {
-        const player = new window.YT.Player('player', {
-            height: '390',
-            width: '640',
-        });
-
-        youtubePlayer.current = player;
-    }
-
-    function stopVideo() {
-        for (const peerRef of peersRef.current) {
-            peerRef.peer.send(JSON.stringify({ type: "pause" }));
-            youtubePlayer.current.pauseVideo();
-        }
-    }
-
-    function playVideo() {
-        for (const peerRef of peersRef.current) {
-            peerRef.peer.send(JSON.stringify({ type: "play" }));
-            youtubePlayer.current.playVideo();
-        }
-    }
-
-    function loadVideo() {
-        for (const peerRef of peersRef.current) {
-            peerRef.peer.send(JSON.stringify({ type: "newVideo", data: videoID }));
-            youtubePlayer.current.loadVideoById(videoID.split("=")[1]);
-        }
-    }
-
-    function createPeer(userToSignal, callerID, callerNickname, stream) {
+    
+    const createPeer = (userToSignal, callerID, callerNickname, stream) => {
         const peer = new Peer({
             initiator: true,
             trickle: false,
@@ -346,7 +293,7 @@ const Room = (props) => {
         return peer;
     }
 
-    function addPeer(incomingSignal, callerID, stream) {
+    const addPeer = (incomingSignal, callerID, stream) => {
         const peer = new Peer({
             initiator: false,
             trickle: false,
@@ -363,23 +310,154 @@ const Room = (props) => {
         return peer;
     }
 
-    function handleStream(stream) {
-        console.log('handleStream called')
-        // partnerVideo.current.srcObject = stream;
+    const load = url => {
+        setUrl(url);
+        setVideoID(url);
+        setPlayed(0);
+        setLoaded(0);
+    }
+
+    const handlePlayPause = () => {
+        setplaying(prevPlaying => !prevPlaying)
+    }
+
+    const handleStart = () => {
+        setplaying(true);
+    }
+
+    const handleStop = () => {
+        setUrl(null);
+        setplaying(false);
+    }
+
+    const handleVolumeChange = (e, newValue) => {
+        setVolume(newValue);
+    }
+
+    const handleToggleMuted = () => {
+        setMuted(prevMuted => !prevMuted);
+    }
+
+    const handleSetPlaybackRate = e => {
+        setPlaybackRate(e.target.value);
+    }
+
+    const handlePlay = () => {
+        setplaying(true);
+    }
+
+    const handlePause = () => {
+        setplaying(false);
+    }
+
+    const handleSeekChange = (e, newValue) => {
+        setPlayed(newValue);
+    }
+
+    const handleSeekMouseUp = (e, newValue) => {
+        setSeeking(false);
+        reactPlayer.current.seekTo((newValue), 'fraction');
+    }
+
+    const handleProgress = state => {
+        // We only want to update time slider if we are not currently seeking
+        if (!seeking) {
+            setPlayed((state.played));
+            setLoaded((state.loaded));
+        }
+    }
+
+    const handleEnded = () => {
+        console.log('onEnded')
+    }
+
+    const handleDuration = (duration) => {
+        console.log('onDuration', duration)
+        setDuration(duration)
+    }
+
+
+    const stopVideo = () => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "stop" }));
+        }
+        handleStop();
+    }
+
+    const startVideo = () => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "start" }));
+        }
+        handleStart();
+    }
+
+    const pauseVideo = () => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "pause" }));
+        }
+        handlePause();
+    }
+
+    const playVideo = () => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "play" }));
+        }
+        handlePlay();
+    }
+
+    const playOrPauseVideo = () => {
+        for (const peerRef of peersRef.current) {
+            if (playing) {
+                peerRef.peer.send(JSON.stringify({ type: "pause" }));
+            } else if (!playing) {
+                peerRef.peer.send(JSON.stringify({ type: "play" }));
+            }
+        }
+        handlePlayPause();
+    }
+
+    const seekChangeVideo = (e) => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "seekChange", data: e.target.value }));
+        }
+        handleSeekChange((e.target.value));
+    }
+
+    const playbackRateChangeVideo = (e) => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "playbackRateChange", data: e.target.value }));
+        }
+        handleSetPlaybackRate((e.target.value));
+    }
+
+    const loadVideo = () => {
+        for (const peerRef of peersRef.current) {
+            peerRef.peer.send(JSON.stringify({ type: "newVideo", data: videoID }));
+        }
+        load(videoID);
     }
 
     function handleData(data) {
         const parsed = JSON.parse(data);
+
         if (parsed.type === "newVideo") {
-            youtubePlayer.current.loadVideoById(parsed.data.split("=")[1]);
+            load(parsed.data);
+        } else if (parsed.type === "start") {
+            handleStart();
         } else if (parsed.type === "pause") {
-            youtubePlayer.current.pauseVideo();
-        } else {
-            youtubePlayer.current.playVideo();
+            handlePause();
+        } else if (parsed.type === "play") {
+            handlePlay();
+        } else if (parsed.type === "seekChange") {
+            handleSeekChange(parsed);
+        } else if (parsed.type === "playbackRateChange") {
+            handleSetPlaybackRate(parsed);
+        } else if (parsed.type === "stop") {
+            handleStop();
         }
     }
 
-    function handleModalSubmit(e) {
+    const handleModalSubmit = (e) => {
         e.preventDefault();
         const yourUserState = { id: yourID, nickname: yourNickname };
 
@@ -392,8 +470,8 @@ const Room = (props) => {
                         userVideoRef.current.srcObject = stream;
                     }
                 })
+
                 setRoomConfig(hostRoom);
-                setIsMainReady(true);
                 setYourUser(yourUserState);
             } else {
                 setNicknameFieldError(true);
@@ -401,9 +479,14 @@ const Room = (props) => {
         });
     }
 
-    function handleModalTextFieldChange(e) {
+    const handleModalTextFieldChange = (e) => {
         const { value } = e.target;
         setYourNickname(value);
+    }
+
+    const leaveRoom = () => {
+        socketRef.current.close();
+        props.history.push(`/`);
     }
 
     return (
@@ -439,20 +522,164 @@ const Room = (props) => {
                     <CssBaseline />
                     <AppBar position="fixed" className={classes.appBar}>
                         <Toolbar>
-                            <Typography variant="h6" noWrap>
+                            <Typography variant="h6" className={classes.title} noWrap>
                                 CoVideo
-                        </Typography>
+                            </Typography>
+                            <Button variant="contained" color="primary" type="submit" disableElevation onClick={leaveRoom}>Leave Room</Button>
                         </Toolbar>
                     </AppBar>
                     <main className={classes.content}>
                         <Toolbar />
 
-                        <div id="player" />
-                        <br />
-                        <button onClick={stopVideo}>Stop Video</button>
-                        <button onClick={playVideo}>Play Video</button>
-                        <input type="text" placeholder="video link" value={videoID} onChange={e => setVideoID(e.target.value)} />
-                        <button onClick={loadVideo}>Load video</button>
+                        <div>
+                            <div className={classes.playerWrapper}>
+                                <div className={classes.reactPlayerStyle}>
+                                    <ReactPlayer
+                                        config={{
+                                            youtube: {
+                                                playerVars: {
+                                                    modestbranding: 1,
+                                                    disablekb: 1
+                                                }
+                                            },
+                                        }}
+                                        url={url}
+                                        ref={reactPlayer}
+                                        pip={false}
+                                        playing={playing}
+                                        controls={false}
+                                        light={false}
+                                        loop={false}
+                                        playbackRate={playbackRate}
+                                        volume={(volume)}
+                                        muted={muted}
+                                        onReady={() => console.log('onReady')}
+                                        onStart={startVideo}
+                                        onPlay={playVideo}
+                                        onPause={pauseVideo}
+                                        onBuffer={() => console.log('onBuffer')}
+                                        onSeek={seekChangeVideo}
+                                        onEnded={handleEnded}
+                                        onError={e => console.log('onError', e)}
+                                        onProgress={handleProgress}
+                                        onDuration={handleDuration}
+                                    />
+                                </div>
+                            </div>
+
+                            {(roomConfig.roomType === 'Broadcast' && yourUser.hostUser) || roomConfig.roomType === 'Watch Together' ?
+                                <div style={{ marginLeft: 150 }}>
+                                    <button onClick={stopVideo} disabled={url ? false : true}>Stop</button>
+                                    <button onClick={playOrPauseVideo} disabled={url ? false : true}>{playing ? 'Pause' : 'Play'}</button>
+                                    <input value={videoID} onChange={e => setVideoID(e.target.value)} type='text' placeholder='Enter URL' />
+                                    <button onClick={loadVideo}>Load video</button>
+
+                                    <br />
+                                    <br />
+                                </div>
+                                :
+                                ''
+                            }
+
+                            {url && ((roomConfig.roomType === 'Broadcast' && yourUser.hostUser) || roomConfig.roomType === 'Watch Together') ?
+                                <div className={classes.videoCenterControls}>
+                                    <Grid container spacing={2}>
+                                        <Grid container xs={2} justify={'flex-end'}>
+                                            <Grid item>
+                                                <p>
+                                                    Speed
+                                                </p>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid container xs={4} spacing={1}>
+                                            <Grid item style={{ marginLeft: 15, paddingTop: 20 }}>
+                                                <button onClick={playbackRateChangeVideo} value={1}>1x</button>
+                                            </Grid>
+                                            <Grid item style={{ paddingTop: 20 }}>
+                                                <button onClick={playbackRateChangeVideo} value={1.5}>1.5x</button>
+                                            </Grid>
+                                            <Grid item style={{ paddingTop: 20 }}>
+                                                <button onClick={playbackRateChangeVideo} value={2}>2x</button>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid container xs={2} justify={'flex-end'}>
+                                            <Grid item>
+                                                <p id="muteCheckbox">
+                                                    Muted
+                                                </p>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid item container xs={4}>
+                                            <Checkbox
+                                                checked={muted}
+                                                color="primary"
+                                                onChange={handleToggleMuted}
+                                                style={{ marginLeft: 10, paddingLeft: 0, paddingTop: 5 }}
+                                                justify={'flex-start'}
+                                            />
+                                        </Grid>
+
+
+                                        <Grid container xs={2} justify={'flex-end'}>
+                                            <Grid item>
+                                                <p id="volume-slider">
+                                                    Volume
+                                                </p>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid item container xs={10}>
+                                            <Slider value={volume}
+                                                onChange={handleVolumeChange}
+                                                min={0}
+                                                max={1}
+                                                step={0.01}
+                                                aria-labelledby="volume-slider"
+                                                style={{ marginLeft: 15, paddingTop: 15 }}
+                                            />
+                                        </Grid>
+
+
+                                        <Grid container xs={2} justify={'flex-end'}>
+                                            <Grid item>
+                                                <p id="seek-slider">
+                                                    Seek
+                                                </p>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid item container xs={10}>
+                                            <Slider value={played}
+                                                onChange={handleSeekChange}
+                                                onChangeCommitted={handleSeekMouseUp}
+                                                min={0}
+                                                max={1}
+                                                step={0.01}
+                                                aria-labelledby="seek-slider"
+                                                style={{ marginLeft: 15, paddingTop: 15 }}
+                                            />
+                                        </Grid>
+
+
+                                        <Grid container xs={2} justify={'flex-end'}>
+                                            <Grid item>
+                                                <p id="progress">
+                                                    Loaded
+                                                </p>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid item xs={10}>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={(loaded * 100)}
+                                                aria-labelledby="seek-slider"
+                                                style={{ marginLeft: 15, marginTop: 15 }}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </div>
+                                :
+                                ''
+                            }
+                        </div>
 
                     </main>
                     <Drawer
@@ -482,11 +709,11 @@ const Room = (props) => {
                                     roomConfig.roomComms === 'Text Chat' ?
                                         <TextChatComms messages={messages} yourID={yourID} message={message} handleChange={handleChange} sendMessage={sendMessage} />
                                         :
-                                        <VideoChatComms peers={(peersRef.current)} />
+                                        <VideoChatComms peers={peers} peersRef={(peersRef.current)} />
                                 }
                             </TabPanel>
                             <TabPanel value={currentTab} index={1}>
-                                <UsersList key={usersInRoom.length} usersInRoom={usersInRoom} />
+                                <UsersList key={usersInRoom.length} usersInRoom={usersInRoom} socketRef={socketRef} roomConfig={roomConfig} yourUser={yourUser} />
                             </TabPanel>
 
                         </div>

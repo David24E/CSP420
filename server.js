@@ -4,6 +4,7 @@ const http = require('http');
 const path = require('path');
 const socket = require('socket.io');
 const bodyParser = require('body-parser');
+const moment = require('moment');
 const app = express();
 const server = http.createServer(app);
 const io = socket(server);
@@ -28,11 +29,11 @@ io.on('connection', socket => {
 
     socket.on("join room", (payload, callback) => {
         if (users[payload.roomID]) {
-            const length = users[payload.roomID].length;
+            /* const length = users[payload.roomID].length;
             if (length === 4) {
                 socket.emit("room full");
                 return;
-            }
+            } */
 
             if (users[payload.roomID].some(user => { return (user.nickname === payload.nickname) })) {
                 callback(false, hostRoom);
@@ -40,11 +41,18 @@ io.on('connection', socket => {
                 users[payload.roomID].push({ id: socket.id, nickname: payload.nickname });
             }
         } else {
-            users[payload.roomID] = [{ id: socket.id, nickname: payload.nickname }];
+            if (hostRoom.roomType === 'Broadcast') {
+                users[payload.roomID] = [{ id: socket.id, nickname: payload.nickname, hostUser: true }];
+            } else {
+                users[payload.roomID] = [{ id: socket.id, nickname: payload.nickname }];
+            }
         }
 
         callback(true, hostRoom);
         socket.nickname = payload.nickname;
+        if (users[payload.roomID].length === 1 && hostRoom.roomType === 'Broadcast') {
+            socket.hostUser = payload.hostUser;
+        }
 
         socketToRoom[socket.id] = payload.roomID;
         const usersInThisRoom = users[payload.roomID].filter(user => user.id !== socket.id);
@@ -52,12 +60,29 @@ io.on('connection', socket => {
         socket.emit("all users", usersInThisRoom);
         socket.emit("all users in room", users[payload.roomID]);
 
+        const messageObject = {
+            body: `${payload.nickname} just joined the chat!`,
+            id: payload.roomID,
+            nickname: 'Admin Bot',
+            time: moment().format('h:mm a')
+        };
+        socket.broadcast.emit("message", messageObject);
+
 
         console.log('all-users join room down ');
         console.dir(users);
         console.log('all-rooms join room down ');
         console.dir(rooms);
     });
+
+    socket.on('set user as host', (userToBeHost) => {
+        const roomID = socketToRoom[socket.id];
+
+        const userToBeSetAsHost = users[roomID].map(user => user.id === userToBeHost.id ? {...user, hostUser: true} : user);
+        users[roomID] = userToBeSetAsHost;
+        
+        socket.emit("all users in room", users[roomID]);
+    })
 
     socket.on("sending signal", payload => {
         /* console.log('sending signal' + users[payload.roomID]);
@@ -76,6 +101,8 @@ io.on('connection', socket => {
     });
 
     socket.on('send message', body => {
+        console.log('send message')
+        console.dir(body)
         io.emit('message', body)
     })
 
@@ -120,21 +147,7 @@ app.post('/', (req, res) => {
     console.dir(users);
 
     res.send(`POST request received.`);
-})
-
-/* 
-app.get('/room/:roomID', (req, res) => {
-    const { roomID } = req.params;
-    const { roomName, roomComms, roomType } = hostRoom;
-
-    console.log(`GET /room/${roomID}`);
-    console.dir(roomName);
-    console.log('roomName up, roomType down');
-    console.dir(roomType);
-
-    res.json({ roomName, roomComms, roomType });
-})
- */
+});
 
 if (process.env.PROD) {
     app.use(express.static(path.join(__dirname, './client/build')));

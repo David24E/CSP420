@@ -80,7 +80,7 @@ const VideoChatComms = (props) => {
                     </div>
                 </div>
             </div>
-            {props.peers.length > 0 ? props.peers.map((peer) => { return (<Video key={peer.peerID} peer={peer.peer} nickname={peer.peerNickname} />)}) : ''}
+            {props.peersRef.length > 0 ? props.peersRef.map((peer) => { return (<Video key={peer.peerID} peer={peer.peer} nickname={peer.peerNickname} />)}) : ''}
         </div>
     );
 };

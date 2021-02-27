@@ -1,14 +1,14 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { List, ListItem, IconButton, Divider, TextField } from "@material-ui/core";
 import SendIcon from '@material-ui/icons/Send';
 import { makeStyles } from '@material-ui/core/styles';
-import Message from "./message";
+import Message from "./Message";
 
 const useStyles = makeStyles({
     chatFormContainer: {
         position: 'absolute',
         margin: '8px 0px',
-        width: '89%',
+        width: '93%',
         bottom: '0px',
         top: 'auto'
     },
@@ -16,7 +16,7 @@ const useStyles = makeStyles({
         marginTop: '8px',
     },
     textField: {
-        width: '87%'
+        width: '89%'
     },
     messageArea: {
         height: '70vh',
@@ -30,15 +30,25 @@ const useStyles = makeStyles({
 
 const TextChatComms = (props) => {
     const classes = useStyles();
+    const messageArea = useRef(null);
+
+    useEffect(() => {
+        if (messageArea) {
+            messageArea.current.addEventListener('DOMNodeInserted', event => {
+                const { currentTarget: target } = event;
+                target.scroll({ top: target.scrollHeight, behavior: 'smooth' });
+            });
+        }
+    }, []);
 
     return (
         <>
-            <List className={classes.messageArea}>
+            <List className={classes.messageArea} ref={messageArea}>
                 {props.messages.map((message, index) => {
                     if (message.id === props.yourID) {
                         return (
                             <ListItem key={index} className={classes.message}>
-                                <Message messageType='mine' messageUser={message.nickname} messageTime='09:30'>
+                                <Message messageType='mine' messageUser={message.nickname} messageTime={message.time}>
                                     {message.body}
                                 </Message>
                             </ListItem>
@@ -46,7 +56,7 @@ const TextChatComms = (props) => {
                     }
                     return (
                         <ListItem key={index} className={classes.message}>
-                            <Message messageType='otherUser' messageUser={message.nickname} messageTime='09:31'>
+                            <Message messageType='otherUser' messageUser={message.nickname} messageTime={message.time}>
                                 {message.body}
                             </Message>
                         </ListItem>
