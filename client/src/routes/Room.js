@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 import Peer from "simple-peer";
 import { AppBar, Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, CssBaseline, Divider, Drawer, Grid, LinearProgress, Slider, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
-import UsersList from "../components/userCommsSection/usersList/UsersList";
 import TextChatComms from "../components/userCommsSection/textChatComms/TextChatComms";
 import VideoChatComms from "../components/userCommsSection/videoChatComms/VideoChatComms";
+import UsersList from "../components/userCommsSection/usersList/UsersList";
 import ReactPlayer from "react-player";
 import moment from "moment";
 
