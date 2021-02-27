@@ -56,3 +56,4 @@ typings/
 
 # dotenv environment variables file
 .envnode_modules
+npm-debug.log
