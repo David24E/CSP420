@@ -257,7 +257,7 @@ const Room = (props) => {
     const [infoSnackbar, setInfoSnackbar] = useState({ open: false, type: 'info', text: '', autoHideDuration: 0 });
 
     useEffect(() => {
-        fetch(`api//room/${roomID}`)
+        fetch(`/api/room/${roomID}`)
             .then(response => response.json())
             .then(data => {
                 console.log('data', data);
