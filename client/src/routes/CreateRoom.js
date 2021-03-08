@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { Card, CardHeader, CardActions, CardContent, Button, TextField, Divider, MenuItem } from "@material-ui/core";
-import { makeStyles } from '@material-ui/core/styles';
+import React, { useEffect, useState } from "react";
+import { Card, CardHeader, CardActions, CardContent, Button, TextField, Divider, MenuItem, Snackbar, Typography, Fab } from "@material-ui/core";
+import { Alert, AlertTitle } from '@material-ui/lab';
+import InfoIcon from '@material-ui/icons/Info';
+import { makeStyles, } from '@material-ui/core/styles';
 import { v1 as uuid } from "uuid";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
     root: {
         minWidth: '100%',
         minHeight: '100vh',
@@ -17,6 +19,22 @@ const useStyles = makeStyles({
         maxWidth: 345,
     },
 
+    fab: {
+        position: 'absolute',
+        top: theme.spacing(2),
+        right: theme.spacing(2),
+    },
+
+    snackbar: {
+        position: 'absolute',
+        top: theme.spacing(1.5),
+        right: theme.spacing(1.5),
+    },
+
+    infoIcon: {
+        marginRight: theme.spacing(1),
+    },
+
     maxWidth: {
         width: '100%',
     },
@@ -24,7 +42,7 @@ const useStyles = makeStyles({
     textFieldVSpacing: {
         marginTop: 22,
     }
-});
+}));
 
 const roomCommsConfigurations = ['Text Chat', 'Video Chat'];
 const roomTypeConfigurations = ['Watch Together', 'Broadcast'];
@@ -35,6 +53,19 @@ const CreateRoom = (props) => {
     const [roomName, setRoomName] = useState('');
     const [roomType, setRoomType] = useState(`${roomTypeConfigurations[0]}`)
     const [roomComms, setRoomComms] = useState(`${roomCommsConfigurations[0]}`)
+    const [open, setOpen] = useState(false);
+
+    const handleMoreInfoButtonClick = () => {
+        setOpen(true);
+    }
+
+    const handleClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
+        setOpen(false);
+    };
 
     const handleCreateRoomSubmission = (e) => {
         e.preventDefault();
@@ -49,8 +80,8 @@ const CreateRoom = (props) => {
             },
             body: JSON.stringify(createRoomState)
         })
-        .then((result) => console.log(result.text()))
-        .then(() => {props.history.push(`/room/${roomID}`)});
+            .then((result) => console.log(result.text()))
+            .then(() => { props.history.push(`/room/${roomID}`) });
     }
 
     const handleTextFieldChange = (e) => {
@@ -67,6 +98,18 @@ const CreateRoom = (props) => {
     return (
         <>
             <div className={classes.root}>
+                <Fab
+                    variant="extended"
+                    size="small"
+                    color="primary"
+                    aria-label="add"
+                    className={classes.fab}
+                    onClick={handleMoreInfoButtonClick}
+                >
+                    <InfoIcon className={classes.infoIcon} />
+                    More Info
+                </Fab>
+
                 <Card className={classes.card}>
                     <CardHeader title='CoVideo' />
                     <Divider />
@@ -89,6 +132,37 @@ const CreateRoom = (props) => {
                         </CardActions>
                     </form>
                 </Card>
+
+                {/* <Alert severity="info">
+                    <AlertTitle>Info</AlertTitle>
+                    This is an info alert — <strong>check it out!</strong>
+                </Alert> */}
+
+                <Snackbar
+                    open={open}
+                    onClose={handleClose}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    className={classes.snackbar}
+                >
+                    <Alert onClose={handleClose} severity="info">
+                        <AlertTitle>More Info</AlertTitle>
+                        <Typography>
+                            <strong>Room Name: </strong>Name the room you are creating.
+                        </Typography>
+                        <Typography>
+                            <strong>Room Comms: </strong>Select <em>Text Chat</em> for instant<br />
+                            messaging or <em>Video Chat</em> for audio/video <br />
+                            communication.
+                        </Typography>
+                        <Typography>
+                            <strong>Room Type: </strong>Select <em>Watch Together</em> for shared<br />
+                            access to video player controls amongst all<br />
+                            particpants or <em>Broadcast</em> for restricted access.<br />
+                            In Broadcast mode, the host can grant other <br />
+                            users access to controls on-demand.
+                        </Typography>
+                    </Alert>
+                </Snackbar>
             </div>
 
         </>

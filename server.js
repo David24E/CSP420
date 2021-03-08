@@ -54,6 +54,7 @@ io.on('connection', socket => {
             socket.hostUser = payload.hostUser;
         }
 
+        socket.join(payload.roomID);
         socketToRoom[socket.id] = payload.roomID;
         const usersInThisRoom = users[payload.roomID].filter(user => user.id !== socket.id);
 
@@ -66,7 +67,7 @@ io.on('connection', socket => {
             nickname: 'Admin Bot',
             time: moment().format('h:mm a')
         };
-        socket.broadcast.emit("message", messageObject);
+        socket.to(payload.roomID).emit("message", messageObject);
 
 
         console.log('all-users join room down ');
@@ -78,9 +79,9 @@ io.on('connection', socket => {
     socket.on('set user as host', (userToBeHost) => {
         const roomID = socketToRoom[socket.id];
 
-        const userToBeSetAsHost = users[roomID].map(user => user.id === userToBeHost.id ? {...user, hostUser: true} : user);
+        const userToBeSetAsHost = users[roomID].map(user => user.id === userToBeHost.id ? { ...user, hostUser: true } : user);
         users[roomID] = userToBeSetAsHost;
-        
+
         socket.emit("all users in room", users[roomID]);
     })
 
@@ -126,6 +127,16 @@ io.on('connection', socket => {
         console.dir(rooms);
         console.log('socketToRoom disconnect down ');
         console.dir(socketToRoom);
+        console.log('roomID disconnect down ');
+        console.dir(roomID);
+
+        const messageObject = {
+            body: `${socket.nickname} just left the chat.`,
+            id: roomID,
+            nickname: 'Admin Bot',
+            time: moment().format('h:mm a')
+        };
+        socket.to(roomID).emit("message", messageObject);
 
         socket.broadcast.emit('user left', socket.id);
     });
@@ -149,12 +160,30 @@ app.post('/', (req, res) => {
     res.send(`POST request received.`);
 });
 
+app.get('/room/:roomID', (req, res) => {
+    const { roomID } = req.params;
+    let roomConfig = {};
+    console.log('/room/:roomID hostRoom');
+
+    for (room in rooms) {
+        if (room === roomID) {
+            roomConfig = {
+                roomName: rooms[roomID].roomName,
+                roomType: rooms[roomID].roomType,
+                roomComms: rooms[roomID].roomComms
+            }
+        }
+    }
+
+    res.json(roomConfig);
+});
+
 if (process.env.PROD) {
     app.use(express.static(path.join(__dirname, './client/build')));
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, './client/build/index.html'), (err) => {
             if (err) {
-              res.status(500).send(err)
+                res.status(500).send(err)
             }
         });
     });

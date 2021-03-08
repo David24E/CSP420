@@ -8,7 +8,7 @@ const useStyles = makeStyles({
     chatFormContainer: {
         position: 'absolute',
         margin: '8px 0px',
-        width: '93%',
+        width: 'calc(100% - 32px)',
         bottom: '0px',
         top: 'auto'
     },
@@ -16,7 +16,7 @@ const useStyles = makeStyles({
         marginTop: '8px',
     },
     textField: {
-        width: '89%'
+        width: 'calc(100% - 48px)'
     },
     messageArea: {
         height: '70vh',

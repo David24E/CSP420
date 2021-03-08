@@ -1,13 +1,22 @@
 import React, { useState } from "react";
-import { Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton } from "@material-ui/core";
-import CheckRoundedIcon from '@material-ui/icons/CheckRounded';
+import { Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Snackbar } from "@material-ui/core";
+import { makeStyles } from '@material-ui/core/styles';
+import { Alert } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import FileCopyRoundedIcon from '@material-ui/icons/FileCopyRounded';
 import Popover from '@material-ui/core/Popover';
 
+const useStyles = makeStyles((theme) => ({
+    confirmCopySnackbar: {
+        position: 'fixed',
+        left: theme.spacing(1.5),
+        height: 20,
+    },
+}));
+
 const UsersList = (props) => {
-    const [text, setText] = useState('Click To Copy Invite URL');
-    const [buttonIcon, setButtonIcon] = useState(<FileCopyRoundedIcon />);
+    const classes = useStyles();
+    const [openConfirmCopySnackbar, setOpenConfirmCopySnackbar] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
 
     const handleCopyURL = () => {
@@ -15,22 +24,29 @@ const UsersList = (props) => {
 
         navigator.clipboard.writeText(url).then(() => {
             console.log('Async: Copying to clipboard was successful!', url);
-
-            setText('URL Copied To Clipboard!');
-            setButtonIcon(<CheckRoundedIcon />);
+            setOpenConfirmCopySnackbar(true);
         }, (err) => {
             console.error('Async: Could not copy text: ', err);
         });
     }
-    
+
+
+    const handleCloseConfirmCopySnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
+        setOpenConfirmCopySnackbar(false);
+    };
+
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
-    
+
     const handleClose = () => {
         setAnchorEl(null);
     };
-    
+
     const handleMakingUserHost = (user) => {
         props.socketRef.current.emit('set user as host', user);
     }
@@ -40,16 +56,28 @@ const UsersList = (props) => {
 
     return (
         <>
+            <Snackbar
+                open={openConfirmCopySnackbar}
+                onClose={handleCloseConfirmCopySnackbar}
+                autoHideDuration={3000}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                className={classes.confirmCopySnackbar}
+            >
+                <Alert onClose={handleCloseConfirmCopySnackbar} severity="success">
+                    URL Copied To Clipboard!
+                </Alert>
+            </Snackbar>
+
             <div>
                 <Button
                     fullWidth
                     color="default"
                     disableElevation
                     variant="contained"
-                    endIcon={buttonIcon}
+                    endIcon={<FileCopyRoundedIcon />}
                     onClick={handleCopyURL}
                 >
-                    {text}
+                    Click To Copy Invite URL
                 </Button>
             </div>
 
@@ -81,7 +109,7 @@ const UsersList = (props) => {
                                         disableElevation
                                         variant="contained"
                                         onClick={() => handleMakingUserHost(users)}
-                                        style={{textTransform: 'capitalize'}}
+                                        style={{ textTransform: 'capitalize' }}
                                     >
                                         make participant co-host
                                     </Button>
