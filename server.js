@@ -160,7 +160,7 @@ app.post('/', (req, res) => {
     res.send(`POST request received.`);
 });
 
-app.get('/room/:roomID', (req, res) => {
+app.get('api/room/:roomID', (req, res) => {
     const { roomID } = req.params;
     let roomConfig = {};
     console.log('/room/:roomID hostRoom');
