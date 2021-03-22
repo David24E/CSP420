@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Snackbar } from "@material-ui/core";
+import { Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Snackbar, Typography } from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
@@ -12,6 +12,9 @@ const useStyles = makeStyles((theme) => ({
         left: theme.spacing(1.5),
         height: 20,
     },
+    listTop: {
+        paddingTop: 0
+    }
 }));
 
 const UsersList = (props) => {
@@ -69,6 +72,10 @@ const UsersList = (props) => {
             </Snackbar>
 
             <div>
+                <Typography>
+                    <strong>Room Name:</strong> {props.roomName}
+                </Typography>
+                <br />
                 <Button
                     fullWidth
                     color="default"
@@ -81,7 +88,12 @@ const UsersList = (props) => {
                 </Button>
             </div>
 
-            <List>
+            <Typography>
+                <br />
+                <br />
+                <strong>People currently in the room:</strong>
+            </Typography>
+            <List className={classes.listTop}>
                 {props.usersInRoom.map((users) => (
                     <ListItem key={users.id}>
                         <ListItemText primary={users.nickname} />

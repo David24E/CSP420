@@ -1154,7 +1154,7 @@ const Room = (props) => {
                                 }
                             </TabPanel>
                             <TabPanel value={currentTab} index={1}>
-                                <UsersList key={usersInRoom.length} usersInRoom={usersInRoom} socketRef={socketRef} roomConfig={roomConfig} yourUser={yourUser} />
+                                <UsersList key={usersInRoom.length} usersInRoom={usersInRoom} socketRef={socketRef} roomConfig={roomConfig} yourUser={yourUser} roomName={roomConfig.roomName} />
                             </TabPanel>
 
                         </div>
