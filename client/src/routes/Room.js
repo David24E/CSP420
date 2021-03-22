@@ -642,6 +642,7 @@ const Room = (props) => {
 
     const handleEnded = () => {
         console.log('onEnded')
+        setplaying(false);
     }
 
     const handleDuration = (duration) => {
@@ -944,8 +945,8 @@ const Room = (props) => {
                                                         {playing ? (
                                                             <PauseIcon fontSize="inherit" />
                                                         ) : (
-                                                                <PlayArrowIcon fontSize="inherit" />
-                                                            )}
+                                                            <PlayArrowIcon fontSize="inherit" />
+                                                        )}
                                                     </IconButton>
 
                                                     <IconButton onClick={fastForwardVideo} className={classes.controlIcons} aria-label="forward">
@@ -983,8 +984,8 @@ const Room = (props) => {
                                                                 {playing ? (
                                                                     <PauseIcon />
                                                                 ) : (
-                                                                        <PlayArrowIcon />
-                                                                    )}
+                                                                    <PlayArrowIcon />
+                                                                )}
                                                             </IconButton>
 
                                                             <IconButton onClick={handleToggleMuted} className={classes.bottomIcons} style={{ padding: 4, marginRight: 4 }}>
@@ -993,8 +994,8 @@ const Room = (props) => {
                                                                 ) : volume > 0.5 ? (
                                                                     <VolumeUp />
                                                                 ) : (
-                                                                            <VolumeDown />
-                                                                        )}
+                                                                    <VolumeDown />
+                                                                )}
                                                             </IconButton>
 
                                                             <Slider
