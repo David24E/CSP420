@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 import { makeStyles } from '@material-ui/core/styles';
 import CreateRoom from './routes/CreateRoom';
 import Room from "./routes/Room";
 import './App.css';
+import ReactGA from "react-ga";
 
 const useStyles = makeStyles({
   appRoot: {
@@ -17,6 +18,11 @@ const useStyles = makeStyles({
 
 function App() {
   const classes = useStyles();
+
+  useEffect(() => {
+    ReactGA.initialize('G-W3D253QY1B');
+    // ReactGA.pageview(window.location.pathname + window.location.search);
+  })
 
   return (
     <div className={classes.appRoot}>
