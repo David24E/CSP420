@@ -20,7 +20,7 @@ const useStyles = makeStyles({
 function App() {
   const classes = useStyles();
   if (process.env.NODE_ENV === 'production') {
-    ReactGA.initialize('UA-192856708-1');
+    ReactGA.initialize('UA-192856708-2');
     if (moment() < moment("04-01-2021", "MM-DD-YYYY")) {
       window['ga-disable-UA-192856708-2'] = true;
     }
