@@ -5,6 +5,7 @@ import CreateRoom from './routes/CreateRoom';
 import Room from "./routes/Room";
 import './App.css';
 import ReactGA from "react-ga";
+import moment from "moment";
 
 const useStyles = makeStyles({
   appRoot: {
@@ -18,11 +19,15 @@ const useStyles = makeStyles({
 
 function App() {
   const classes = useStyles();
-
-  useEffect(() => {
-    ReactGA.initialize('G-W3D253QY1B');
-    // ReactGA.pageview(window.location.pathname + window.location.search);
-  })
+  if (process.env.NODE_ENV === 'production') {
+    ReactGA.initialize('UA-192856708-1');
+    if (moment() < moment("04-01-2021", "MM-DD-YYYY")) {
+      window['ga-disable-UA-192856708-2'] = true;
+    }
+  } else {
+    ReactGA.initialize('UA-192856708-1');
+    window['ga-disable-UA-192856708-1'] = true;
+  }
 
   return (
     <div className={classes.appRoot}>

@@ -4,6 +4,9 @@ import { Alert, AlertTitle } from '@material-ui/lab';
 import InfoIcon from '@material-ui/icons/Info';
 import { makeStyles, } from '@material-ui/core/styles';
 import { v1 as uuid } from "uuid";
+import ReactGA from "react-ga";
+import moment from "moment";
+import gaEvent from "../helper/googleAnalytics";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -55,8 +58,13 @@ const CreateRoom = (props) => {
     const [roomComms, setRoomComms] = useState(`${roomCommsConfigurations[0]}`)
     const [open, setOpen] = useState(false);
 
+    useEffect(() => {
+        ReactGA.pageview(window.location.pathname + window.location.search);
+    })
+
     const handleMoreInfoButtonClick = () => {
         setOpen(true);
+        gaEvent("ALERTS", "", `Clicked on more info button at ${moment().format('h:mm a')}`)
     }
 
     const handleClose = (event, reason) => {
@@ -82,6 +90,9 @@ const CreateRoom = (props) => {
         })
             .then((result) => console.log(result.text()))
             .then(() => { props.history.push(`/room/${roomID}`) });
+
+        gaEvent(`SESSIONS`, `${roomID}`, `Session Start at ${moment().format('h:mm a')}`);
+        gaEvent('ROOMS', `${roomID}`, `Room Setup. Name: ${roomName}, Type: ${roomType}, Comms: ${roomComms}`);
     }
 
     const handleTextFieldChange = (e) => {

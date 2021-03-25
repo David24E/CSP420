@@ -5,6 +5,7 @@ import { Alert } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import FileCopyRoundedIcon from '@material-ui/icons/FileCopyRounded';
 import Popover from '@material-ui/core/Popover';
+import gaEvent from "../../../helper/googleAnalytics";
 
 const useStyles = makeStyles((theme) => ({
     confirmCopySnackbar: {
@@ -28,8 +29,10 @@ const UsersList = (props) => {
         navigator.clipboard.writeText(url).then(() => {
             console.log('Async: Copying to clipboard was successful!', url);
             setOpenConfirmCopySnackbar(true);
+            gaEvent('ALERTS', `${props.roomID}`, `URL copy Success`);
         }, (err) => {
             console.error('Async: Could not copy text: ', err);
+            gaEvent('ALERTS', `${props.roomID}`, `URL copy Error`);
         });
     }
 

@@ -16,11 +16,15 @@ import VolumeDown from "@material-ui/icons/VolumeDown";
 import VolumeMute from "@material-ui/icons/VolumeOff";
 import EjectIcon from '@material-ui/icons/Eject';
 import PublishIcon from '@material-ui/icons/Publish';
+import FullScreen from "@material-ui/icons/Fullscreen";
 import TextChatComms from "../components/userCommsSection/textChatComms/TextChatComms";
 import VideoChatComms from "../components/userCommsSection/videoChatComms/VideoChatComms";
 import UsersList from "../components/userCommsSection/usersList/UsersList";
 import ReactPlayer from "react-player";
+import screenfull from "screenfull";
 import moment from "moment";
+import ReactGA from "react-ga";
+import gaEvent from "../helper/googleAnalytics";
 
 const drawerWidth = '40%';
 // const maxDrawerWidth = 425;
@@ -87,13 +91,22 @@ const useStyles = makeStyles((theme) => ({
         bottom: theme.spacing(1.5),
         left: theme.spacing(1.5),
     },
+    controlsContainer: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0)",
+        zIndex: 0.5,
+    },
     controlsWrapper: {
         position: "absolute",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.6)",
+        background: "rgba(0,0,0,0.4)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -112,6 +125,12 @@ const useStyles = makeStyles((theme) => ({
         color: "#999",
         "&:hover": {
             color: "#fff",
+        },
+    },
+    bottomLocalIcons: {
+        color: "#ab003c",
+        "&:hover": {
+            color: "#f73378",
         },
     },
     volumeSlider: {
@@ -224,6 +243,7 @@ const Room = (props) => {
     const socketRef = useRef();
     const peersRef = useRef([]);
     const playerRef = useRef(null);
+    const playerContainerRef = useRef(null);
     const controlsRef = useRef(null);
 
     const roomID = props.match.params.roomID;
@@ -255,6 +275,10 @@ const Room = (props) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [openCopySnackbar, setOpenCopySnackbar] = useState(false);
     const [infoSnackbar, setInfoSnackbar] = useState({ open: false, type: 'info', text: '', autoHideDuration: 0 });
+
+    useEffect(() => {
+        ReactGA.pageview(window.location.pathname + window.location.search);
+    })
 
     useEffect(() => {
         fetch(`/api/room/${roomID}`)
@@ -365,6 +389,10 @@ const Room = (props) => {
 
     useEffect(() => {
         window.addEventListener('beforeunload', (event) => {
+            gaEvent('ROOMS', `${roomID}`, `User Exits. Nickname: ${yourNickname}`);
+            if (usersInRoom.length < 2) {
+                gaEvent(`SESSIONS`, `${roomID}`, `Session End at ${moment().format('h:mm a')}`);
+            }
             // Cancel the event as stated by the standard.
             event.preventDefault();
             // Older browsers supported custom message
@@ -460,6 +488,7 @@ const Room = (props) => {
         };
         setMessage("");
         socketRef.current.emit("send message", messageObject);
+        gaEvent('COMMS', `${roomID}`, `Message Sent at ${moment().format('h:mm a')}. Nickname: ${yourNickname}`)
     }
 
     const handleChange = (e) => {
@@ -560,6 +589,7 @@ const Room = (props) => {
         setPlayed(0);
         setUrl(null);
         setplaying(false);
+        setDuration(0);
     }
 
     const handleVolumeSeekDown = (e, newValue) => {
@@ -574,11 +604,18 @@ const Room = (props) => {
         } else {
             setMuted(false);
         }
+        gaEvent(`LOCAL MEDIA`, `${roomID}`, `Volume Change at ${moment().format('h:mm a')}`);
     }
 
     const handleToggleMuted = () => {
         setMuted(prevMuted => !prevMuted);
+        gaEvent(`LOCAL MEDIA`, `${roomID}`, `Toggle Mute on Video at ${moment().format('h:mm a')}`);
     }
+
+    const handleToggleFullScreen = () => {
+        screenfull.toggle(playerContainerRef.current);
+        gaEvent(`LOCAL MEDIA`, `${roomID}`, `Toggle Fullscreen on Video at ${moment().format('h:mm a')}`);
+    };
 
     const handleSetPlaybackRate = newValue => {
         setPlaybackRate(newValue);
@@ -624,16 +661,18 @@ const Room = (props) => {
         } else {
             setTimeDisplayFormat('normal');
         }
+        gaEvent(`LOCAL MEDIA`, `${roomID}`, `Time Display Format Change at ${moment().format('h:mm a')}`);
     }
 
     const handleProgress = (state) => {
-        /* if (count > 3) {
+        if (count > 3) {
             controlsRef.current.style.visibility = "hidden";
             count = 0;
         }
         if (controlsRef.current.style.visibility === "visible") {
             count += 1;
-        } */
+        }
+
         if (!seeking) {
             setPlayed(state.played);
             setLoaded(state.loaded);
@@ -655,7 +694,7 @@ const Room = (props) => {
         : "00:00";
 
     const formattedDuration = playerRef && playerRef.current
-        ? playerRef.current.getDuration()
+        ? duration
         : "00:00";
     const elapsedTime = timeDisplayFormat === "normal"
         ? format(currentTime)
@@ -668,7 +707,10 @@ const Room = (props) => {
         for (const peerRef of peersRef.current) {
             peerRef.peer.send(JSON.stringify({ type: "stop" }));
         }
+        gaEvent(`ALERTS`, `${roomID}`, `Video Play Time: ${elapsedTime} as at ${moment().format('h:mm a')}`);
+        gaEvent(`ALERTS`, `${roomID}`, `Video Duration: ${totalDuration} as at ${moment().format('h:mm a')}`);
         handleStop();
+        gaEvent(`SHARED MEDIA`, `${roomID}`, `Stop Video at ${moment().format('h:mm a')}`);
     }
 
     const playOrPauseVideo = () => {
@@ -677,6 +719,7 @@ const Room = (props) => {
             peerRef.peer.send(JSON.stringify({ type: "playOrPause" }));
         }
         handlePlayPause();
+        gaEvent(`SHARED MEDIA`, `${roomID}`, `Play or Pause Video at ${moment().format('h:mm a')}`);
     }
 
     const seekChangeVideo = (e, newValue) => {
@@ -685,6 +728,7 @@ const Room = (props) => {
             peerRef.peer.send(JSON.stringify({ type: "seekChange", data: newValue }));
         }
         handleSeekChange(null, newValue);
+        gaEvent(`SHARED MEDIA`, `${roomID}`, `Seek Changed at ${moment().format('h:mm a')}`);
     }
 
     const fastForwardVideo = () => {
@@ -693,6 +737,7 @@ const Room = (props) => {
             peerRef.peer.send(JSON.stringify({ type: "fastForward" }));
         }
         handleFastForward();
+        gaEvent(`SHARED MEDIA`, `${roomID}`, `FastForward Video at ${moment().format('h:mm a')}`);
     }
 
     const rewindVideo = () => {
@@ -701,6 +746,7 @@ const Room = (props) => {
             peerRef.peer.send(JSON.stringify({ type: "rewind" }));
         }
         handleRewind();
+        gaEvent(`SHARED MEDIA`, `${roomID}`, `Rewind Video at ${moment().format('h:mm a')}`);
     }
 
     const playbackRateChangeVideo = (newValue) => {
@@ -709,6 +755,7 @@ const Room = (props) => {
             peerRef.peer.send(JSON.stringify({ type: "playbackRateChange", data: newValue }));
         }
         handleSetPlaybackRate(newValue);
+        gaEvent(`SHARED MEDIA`, `${roomID}`, `Playback Rate Changed at ${moment().format('h:mm a')}`);
     }
 
     const loadVideo = () => {
@@ -721,6 +768,7 @@ const Room = (props) => {
                 peerRef.peer.send(JSON.stringify({ type: "newVideo", data: videoID }));
             }
             load(videoID);
+            gaEvent(`SHARED MEDIA`, `${roomID}`, `Load Video at ${moment().format('h:mm a')}`);
         } else {
             setInfoSnackbar({ open: true, type: 'error', text: 'No playable content found at URL entered. Please try again', autoHideDuration: 6000 });
             for (const peerRef of peersRef.current) {
@@ -730,12 +778,14 @@ const Room = (props) => {
                 peerRef.peer.send(JSON.stringify({ type: "newVideo", data: null }));
             }
             load(null);
+            gaEvent('SHARED MEDIA', `${roomID}`, `Fail to Load Video at ${moment().format('h:mm a')}`);
         }
     }
 
     const handleReactPlayerError = (e) => {
         console.log('onError', e);
         setInfoSnackbar({ open: true, type: 'error', text: 'error', autoHideDuration: 3000 });
+        gaEvent('ALERTS', `${roomID}`, `Player Error at ${moment().format('h:mm a')}`);
     }
 
     function handleData(data) {
@@ -772,7 +822,9 @@ const Room = (props) => {
                 // setRoomConfig(hostRoom);
                 setYourUser(yourUserState);
                 setOpenCopySnackbar(true);
+                gaEvent('ROOMS', `${roomID}`, `User joins at ${moment().format('h:mm a')}. Nickname: ${yourNickname}`);
             } else {
+                gaEvent('ROOMS', `${roomID}`, `User Fails to join at ${moment().format('h:mm a')}. Nickname: ${yourNickname}`);
                 setNicknameFieldError(true);
             }
         });
@@ -789,8 +841,10 @@ const Room = (props) => {
         navigator.clipboard.writeText(url).then(() => {
             console.log('Async: Copying to clipboard was successful!', url);
             setInfoSnackbar({ open: true, type: 'success', text: 'URL Copied To Clipboard!', autoHideDuration: 3000 });
+            gaEvent('ALERTS', `${roomID}`, `URL copy Success at ${moment().format('h:mm a')}`);
         }, (err) => {
             console.error('Async: Could not copy text: ', err);
+            gaEvent('ALERTS', `${roomID}`, `URL copy Error at ${moment().format('h:mm a')}`);
         });
     }
 
@@ -821,6 +875,10 @@ const Room = (props) => {
 
     const leaveRoom = () => {
         socketRef.current.close();
+        gaEvent('ROOMS', `${roomID}`, `User Exits. Nickname: ${yourNickname}`);
+        if (usersInRoom.length < 2) {
+            gaEvent(`SESSIONS`, `${roomID}`, `Session End at ${moment().format('h:mm a')}`);
+        }
         props.history.push(`/`);
     }
 
@@ -879,6 +937,7 @@ const Room = (props) => {
                                     className={classes.playerWrapper}
                                     onMouseMove={handleMouseMove}
                                     onMouseLeave={hanldeMouseLeave}
+                                    ref={playerContainerRef}
                                 >
                                     <ReactPlayer
                                         config={{
@@ -916,9 +975,9 @@ const Room = (props) => {
                                         height='100%'
                                     />
 
-                                    <div ref={controlsRef}>
+                                    <div className={classes.controlsContainer}>
                                         {((roomConfig.roomType === 'Broadcast' && yourUser.hostUser) || roomConfig.roomType === 'Watch Together') ?
-                                            <div className={classes.controlsWrapper}>
+                                            <div ref={controlsRef} className={classes.controlsWrapper}>
                                                 {/* Top controls */}
                                                 <Grid
                                                     container
@@ -937,11 +996,11 @@ const Room = (props) => {
                                                 {/* middle controls */}
 
                                                 <Grid container direction="row" alignItems="center" justify="center">
-                                                    <IconButton onClick={rewindVideo} className={classes.controlIcons} aria-label="rewind">
+                                                    <IconButton onClick={rewindVideo} className={classes.controlIcons} aria-label="rewind" disabled={!url}>
                                                         <FastRewindIcon fontSize="inherit" />
                                                     </IconButton>
 
-                                                    <IconButton onClick={playOrPauseVideo} className={classes.controlIcons} aria-label="play">
+                                                    <IconButton onClick={playOrPauseVideo} className={classes.controlIcons} aria-label="play" disabled={!url}>
                                                         {playing ? (
                                                             <PauseIcon fontSize="inherit" />
                                                         ) : (
@@ -949,7 +1008,7 @@ const Room = (props) => {
                                                         )}
                                                     </IconButton>
 
-                                                    <IconButton onClick={fastForwardVideo} className={classes.controlIcons} aria-label="forward">
+                                                    <IconButton onClick={fastForwardVideo} className={classes.controlIcons} aria-label="forward" disabled={!url}>
                                                         <FastForwardIcon fontSize="inherit" />
                                                     </IconButton>
                                                 </Grid>
@@ -974,13 +1033,14 @@ const Room = (props) => {
                                                             onChange={seekChangeVideo}
                                                             onMouseDown={handleSeekMouseUp}
                                                             onChangeCommitted={handleSeekMouseUp}
+                                                            disabled={!url}
                                                         // onDuration={handleDuration}
                                                         />
                                                     </Grid>
 
                                                     <Grid item>
                                                         <Grid container alignItems="center" direction="row">
-                                                            <IconButton onClick={playOrPauseVideo} className={classes.bottomIcons} style={{ padding: 4 }}>
+                                                            <IconButton onClick={playOrPauseVideo} className={classes.bottomIcons} style={{ padding: 4 }} disabled={!url}>
                                                                 {playing ? (
                                                                     <PauseIcon />
                                                                 ) : (
@@ -988,7 +1048,7 @@ const Room = (props) => {
                                                                 )}
                                                             </IconButton>
 
-                                                            <IconButton onClick={handleToggleMuted} className={classes.bottomIcons} style={{ padding: 4, marginRight: 4 }}>
+                                                            <IconButton onClick={handleToggleMuted} className={classes.bottomLocalIcons} style={{ padding: 4, marginRight: 12 }} disabled={!url}>
                                                                 {muted ? (
                                                                     <VolumeMute />
                                                                 ) : volume > 0.5 ? (
@@ -1008,16 +1068,18 @@ const Room = (props) => {
                                                                 onMouseDown={handleSeekMouseDown}
                                                                 onChangeCommitted={handleVolumeSeekDown}
                                                                 style={{ padding: 4 }}
+                                                                color={"secondary"}
+                                                                disabled={!url}
                                                             />
 
                                                             <Button
                                                                 variant="text"
                                                                 onClick={handleChangeDisplayFormat}
-                                                                style={{ padding: 4 }}
+                                                                style={{ padding: 4, marginLeft: 16 }}
                                                             >
                                                                 <Typography
                                                                     variant="body1"
-                                                                    style={{ color: "#fff", marginLeft: 16 }}
+                                                                    style={{ color: !url ? "#434343" : "#f73378" }}
                                                                 >
                                                                     {elapsedTime}/{totalDuration}
                                                                 </Typography>
@@ -1031,6 +1093,7 @@ const Room = (props) => {
                                                             aria-describedby={id}
                                                             className={classes.bottomIcons}
                                                             style={{ padding: 4 }}
+                                                            disabled={!url}
                                                         >
                                                             <Typography>{playbackRate}X</Typography>
                                                         </Button>
@@ -1065,6 +1128,13 @@ const Room = (props) => {
                                                                 ))}
                                                             </Grid>
                                                         </Popover>
+                                                        <IconButton
+                                                            onClick={handleToggleFullScreen}
+                                                            className={classes.bottomLocalIcons}
+                                                            disabled={!url}
+                                                        >
+                                                            <FullScreen />
+                                                        </IconButton>
                                                     </Grid>
                                                 </Grid>
                                             </div>
@@ -1085,7 +1155,7 @@ const Room = (props) => {
                                                     className={classes.mediaIconWithTextButton}
                                                     startIcon={<EjectIcon />}
                                                     onClick={stopVideo}
-                                                    disabled={url ? false : true}
+                                                    disabled={!url}
                                                     style={{ marginRight: 4 }}
                                                 >
                                                     Eject
@@ -1117,6 +1187,15 @@ const Room = (props) => {
                                                 </Button>
                                             </Grid>
                                         </Grid>
+                                        <br />
+                                        <br />
+                                        <div style={{ width: 360 }}>
+                                            <Typography variant={'caption'}>
+                                                <strong>** Note:</strong><br /> All media controls besides the volume, mute
+                                                toggle, fullscreen toggle and time display format button are Shared
+                                                controls and thus, impact the viewing experience of all users in this room.
+                                            </Typography>
+                                        </div>
                                     </div>
                                     :
                                     ''
@@ -1169,7 +1248,7 @@ const Room = (props) => {
                         <Alert onClose={handleCloseCopySnackbar} severity="info">
                             <AlertTitle><strong>Joining Info</strong></AlertTitle>
                             <Typography variant={'body1'}>
-                                Share this link with others you want in this room.
+                                Share this link with other people you want to join this room.
                             </Typography>
                             <br />
                             <br />
