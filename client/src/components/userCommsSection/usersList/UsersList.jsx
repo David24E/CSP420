@@ -55,6 +55,7 @@ const UsersList = (props) => {
 
     const handleMakingUserHost = (user) => {
         props.socketRef.current.emit('set user as host', user);
+        gaEvent('ROOMS', `${props.roomID}`, `User ${props.yourUser.nickname} makes new host –– ${user.nickname}`);
     }
 
     const open = Boolean(anchorEl);
