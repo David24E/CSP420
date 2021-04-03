@@ -388,8 +388,16 @@ const Room = (props) => {
     }, [roomConfig]);
 
     useEffect(() => {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
         window.addEventListener('beforeunload', (event) => {
             gaEvent('ROOMS', `${roomID}`, `User Exits. Nickname: ${yourNickname}`);
+
+            if (connection) {
+                gaEvent('CONNECTION', `${roomID}`, `End with downlink: ${connection.downlink} for ${yourNickname}`);
+                gaEvent('CONNECTION', `${roomID}`, `End with connectionEffectiveType: ${connection.effectiveType} for ${yourNickname}`);
+            }
+
             if (usersInRoom.length < 2) {
                 gaEvent(`SESSIONS`, `${roomID}`, `Session End at ${moment().format('h:mm a')}`);
             }
@@ -814,6 +822,7 @@ const Room = (props) => {
     const handleModalSubmit = (e) => {
         e.preventDefault();
         const yourUserState = { id: yourID, nickname: yourNickname };
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
         socketRef.current.connect();
 
@@ -823,6 +832,11 @@ const Room = (props) => {
                 setYourUser(yourUserState);
                 setOpenCopySnackbar(true);
                 gaEvent('ROOMS', `${roomID}`, `User joins at ${moment().format('h:mm a')}. Nickname: ${yourNickname}`);
+
+                if (connection) {
+                    gaEvent('CONNECTION', `${roomID}`, `Start with downlink: ${connection.downlink} for ${yourNickname}`);
+                    gaEvent('CONNECTION', `${roomID}`, `Start with connectionEffectiveType: ${connection.effectiveType} for ${yourNickname}`);
+                }
             } else {
                 gaEvent('ROOMS', `${roomID}`, `User Fails to join at ${moment().format('h:mm a')}. Nickname: ${yourNickname}`);
                 setNicknameFieldError(true);
@@ -874,8 +888,15 @@ const Room = (props) => {
     };
 
     const leaveRoom = () => {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         socketRef.current.close();
         gaEvent('ROOMS', `${roomID}`, `User Exits. Nickname: ${yourNickname}`);
+
+        if (connection) {
+            gaEvent('CONNECTION', `${roomID}`, `End with downlink: ${connection.downlink} for ${yourNickname}`);
+            gaEvent('CONNECTION', `${roomID}`, `End with connectionEffectiveType: ${connection.effectiveType} for ${yourNickname}`);
+        }
+
         if (usersInRoom.length < 2) {
             gaEvent(`SESSIONS`, `${roomID}`, `Session End at ${moment().format('h:mm a')}`);
         }
