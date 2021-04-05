@@ -60,6 +60,8 @@ const Video = (props) => {
     useEffect(() => {
         if (props.peer) {
             props.peer.on("stream", stream => {
+                console.log('on STREAM', stream);
+                console.dir(props.peer);
                 ref.current.srcObject = stream;
             })
         }
@@ -124,9 +126,9 @@ const VideoChatComms = (props) => {
                         </div>
                     </div>
                 </div>
-                {props.peersRef.length > 0 ? props.peersRef.map((peer) => { return (<Video key={peer.peerID} peer={peer.peer} nickname={peer.peerNickname} />) }) : ''}
+                {props.peersRef.length > 0 ? props.peersRef.map((peersRef) => { return (<Video key={peersRef.peerID} peer={peersRef.peer} nickname={peersRef.peerNickname} />) }) : ''}
             </div>
-            
+
             {/* <div className={classes.videoChatControlsContainer}>
                 <Divider />
                 <div id="videoChatControls" className={classes.videoChatControls}>

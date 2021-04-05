@@ -341,7 +341,7 @@ const Room = (props) => {
                 socketRef.current.on("all users", users => {
                     const peers = [];
                     users.forEach(user => {
-                        const peer = createPeer(user.id, socketRef.current.id, socketRef.current.nickname, null);
+                        const peer = createPeer(user.id, socketRef.current.id, socketRef.current.nickname, stream);
                         peersRef.current.push({
                             peerID: user.id,
                             peerNickname: user.nickname,
@@ -358,7 +358,7 @@ const Room = (props) => {
                 })
 
                 socketRef.current.on("user joined", payload => {
-                    const peer = addPeer(payload.signal, payload.callerID, null);
+                    const peer = addPeer(payload.signal, payload.callerID, stream);
                     // remove?
                     // peer.signal(payload.signal);
                     peersRef.current.push({
