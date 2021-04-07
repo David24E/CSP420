@@ -64,7 +64,7 @@ const Video = (props) => {
             })
 
             if (props.peer.streams) {
-                ref.current.srcObject = props.peer.streams[0]
+                ref.current.srcObject = props.peer.streams[1]
             }
         }
     }, []);
