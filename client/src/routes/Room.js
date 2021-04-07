@@ -290,91 +290,16 @@ const Room = (props) => {
     }, [])
 
     useEffect(() => {
-        console.log('(roomConfig.roomComms === Video Chat)', (roomConfig.roomComms === 'Video Chat'));
-        console.log('(roomConfig.roomComms === Text Chat)', (roomConfig.roomComms === 'Text Chat'));
+
         socketRef.current = io({ autoConnect: false });
         if ((roomConfig.roomComms === 'Text Chat')) {
-
-            socketRef.current.on("all users", users => {
-                const peers = [];
-                users.forEach(user => {
-                    const peer = createPeer(user.id, socketRef.current.id, socketRef.current.nickname, null);
-                    peersRef.current.push({
-                        peerID: user.id,
-                        peerNickname: user.nickname,
-                        peer,
-                    })
-                    peers.push({
-                        peerID: user.id,
-                        peerNickname: user.nickname,
-                        peer
-                    });
-                })
-
-                setPeers(peers);
-            })
-
-            socketRef.current.on("user joined", payload => {
-                const peer = addPeer(payload.signal, payload.callerID, null);
-                // remove?
-                // peer.signal(payload.signal);
-                peersRef.current.push({
-                    peerID: payload.callerID,
-                    peerNickname: payload.callerNickname,
-                    peer,
-                })
-
-                const peerObj = {
-                    peerID: payload.callerID,
-                    peerNickname: payload.callerNickname,
-                    peer,
-                }
-
-                setPeers(users => [...users, peerObj]);
-            });
+            socketFunctionsToCreateAndAddPeers(null);
 
         } else if ((roomConfig.roomComms === 'Video Chat')) {
 
             navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                 // socketRef.current = io.connect("/");
-
-                socketRef.current.on("all users", users => {
-                    const peers = [];
-                    users.forEach(user => {
-                        const peer = createPeer(user.id, socketRef.current.id, socketRef.current.nickname, stream);
-                        peersRef.current.push({
-                            peerID: user.id,
-                            peerNickname: user.nickname,
-                            peer,
-                        })
-                        peers.push({
-                            peerID: user.id,
-                            peerNickname: user.nickname,
-                            peer
-                        });
-                    })
-
-                    setPeers(peers);
-                })
-
-                socketRef.current.on("user joined", payload => {
-                    const peer = addPeer(payload.signal, payload.callerID, stream);
-                    // remove?
-                    // peer.signal(payload.signal);
-                    peersRef.current.push({
-                        peerID: payload.callerID,
-                        peerNickname: payload.callerNickname,
-                        peer,
-                    })
-
-                    const peerObj = {
-                        peerID: payload.callerID,
-                        peerNickname: payload.callerNickname,
-                        peer,
-                    }
-
-                    setPeers(users => [...users, peerObj]);
-                });
+                socketFunctionsToCreateAndAddPeers(stream);
 
             }).catch(err => {
                 setOpenCopySnackbar(false);
@@ -407,6 +332,47 @@ const Room = (props) => {
             event.returnValue = exitPromptText;
         });
     }, [])
+
+
+    const socketFunctionsToCreateAndAddPeers = (stream) => {
+        socketRef.current.on("all users", users => {
+            const peers = [];
+            users.forEach(user => {
+                const peer = createPeer(user.id, socketRef.current.id, socketRef.current.nickname, stream);
+                peersRef.current.push({
+                    peerID: user.id,
+                    peerNickname: user.nickname,
+                    peer,
+                })
+                peers.push({
+                    peerID: user.id,
+                    peerNickname: user.nickname,
+                    peer
+                });
+            })
+
+            setPeers(peers);
+        })
+
+        socketRef.current.on("user joined", payload => {
+            const peer = addPeer(payload.signal, payload.callerID, stream);
+            // remove?
+            // peer.signal(payload.signal);
+            peersRef.current.push({
+                peerID: payload.callerID,
+                peerNickname: payload.callerNickname,
+                peer,
+            })
+
+            const peerObj = {
+                peerID: payload.callerID,
+                peerNickname: payload.callerNickname,
+                peer,
+            }
+
+            setPeers(users => [...users, peerObj]);
+        });
+    }
 
     const socketFunctionsAfterLoading = () => {
         socketRef.current.on("receiving returned signal", payload => {
@@ -1249,7 +1215,7 @@ const Room = (props) => {
                             <TabPanel value={currentTab} index={0}>
                                 {
                                     roomConfig.roomComms === 'Text Chat' ? <TextChatComms messages={messages} yourID={yourID} message={message} handleChange={handleChange} sendMessage={sendMessage} />
-                                        : roomConfig.roomComms === 'Video Chat' ? <VideoChatComms peers={peers} peersRef={(peersRef.current)} />
+                                        : roomConfig.roomComms === 'Video Chat' ? <VideoChatComms peers={peers} peersRef={(peersRef)} />
                                             : leaveRoom()
                                 }
                             </TabPanel>
