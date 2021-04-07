@@ -60,11 +60,17 @@ const Video = (props) => {
     useEffect(() => {
         if (props.peer) {
             props.peer.on("stream", stream => {
+                console.log("stream");
+                console.dir(stream);
+
                 ref.current.srcObject = stream;
             })
 
             if (props.peer.streams) {
-                ref.current.srcObject = props.peer.streams[1]
+                console.log("props.peer");
+                console.dir(props.peer);
+
+                ref.current.srcObject = props.peer._remoteStreams[0]
             }
         }
     }, []);
