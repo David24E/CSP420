@@ -77,7 +77,7 @@ const Video = (props) => {
 
     return (
         <div className={classes.vidContainer}>
-            <video className={classes.styledVideo} playsInline autoPlay muted ref={ref} />
+            <video className={classes.styledVideo} playsInline autoPlay ref={ref} />
             <div className={classes.overlayContainer}>
                 <div className={classes.overlay}>
                     <p className={classes.topText}>{props.nickname}</p>
@@ -107,16 +107,16 @@ const VideoChatComms = (props) => {
 
     /* 
     const toggleAudio = () => {
-        if (userVideoRef.current != null && userVideoRef.current.getAudioTracks().length > 0) {
-            userVideoRef.current.getAudioTracks()[0].enabled = !isAudioOn;
+        if (userVideoRef.current.srcObject != null && userVideoRef.current.srcObject.getAudioTracks().length > 0) {
+            userVideoRef.current.srcObject.getAudioTracks()[0].enabled = !isAudioOn;
 
             setIsAudioOn(prevMute => !prevMute);
         }
     }
 
     const toggleCam = () => {
-        if (userVideoRef.current != null && userVideoRef.current.getVideoTracks().length > 0) {
-            userVideoRef.current.getVideoTracks()[0].enabled = !isCamOn;
+        if (userVideoRef.current.srcObject != null && userVideoRef.current.srcObject.getVideoTracks().length > 0) {
+            userVideoRef.current.srcObject.getVideoTracks()[0].enabled = !isCamOn;
 
             setIsCamOn(prevCamOn => !prevCamOn);
         }
