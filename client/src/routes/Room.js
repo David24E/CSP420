@@ -284,7 +284,6 @@ const Room = (props) => {
         fetch(`/api/room/${roomID}`)
             .then(response => response.json())
             .then(data => {
-                console.log('data', data);
                 setRoomConfig(data);
             });
     }, [])
@@ -304,7 +303,6 @@ const Room = (props) => {
             }).catch(err => {
                 setOpenCopySnackbar(false);
                 setInfoSnackbar({ open: true, type: 'info', text: 'Enable Video Chat by Allowing Camera and Microphone Access', autoHideDuration: 60000 });
-                console.log(err.name + ": " + err.message);
             });
 
         }
@@ -385,12 +383,10 @@ const Room = (props) => {
         })
 
         socketRef.current.on('your id', id => {
-            console.log('your id');
             setYourID(id);
         })
 
         socketRef.current.on('all users in room', users => {
-            console.log('all users in room');
             users.sort((a, b) => { return b.nickname - a.nickname });
 
             users.some((user, idx) =>
@@ -415,10 +411,6 @@ const Room = (props) => {
                     }
                 }
             }
-
-
-            console.log('usersInRoom', users.length);
-            console.dir(users);
 
             if (users.length > 1) {
                 setOpenCopySnackbar(false);
@@ -458,6 +450,7 @@ const Room = (props) => {
             body: message,
             id: yourID,
             nickname: yourNickname,
+            roomID: roomID,
             time: moment().format('h:mm a')
         };
         setMessage("");
@@ -481,7 +474,6 @@ const Room = (props) => {
     }
 
     const createPeer = (userToSignal, callerID, callerNickname, stream) => {
-        console.log('createPeer', stream);
         let peer;
         if (stream) {
             peer = new Peer({
@@ -506,7 +498,6 @@ const Room = (props) => {
     }
 
     const addPeer = (incomingSignal, callerID, stream) => {
-        console.log('addPeer', stream);
         let peer;
         if (stream) {
             peer = new Peer({
@@ -532,7 +523,6 @@ const Room = (props) => {
     }
 
     const load = url => {
-        console.log('url', url);
         setUrl(url);
         setPlayed(0);
         setLoaded(0);
@@ -604,17 +594,14 @@ const Room = (props) => {
     }
 
     const handleSeekChange = (e, newValue) => {
-        console.log('handleSeekChange setPlayed', newValue);
         setPlayed(parseFloat(newValue / 100));
     }
 
     const handleSeekMouseDown = (e) => {
-        console.log('handleSeekMouseDown');
         setSeeking(true);
     };
 
     const handleSeekMouseUp = (e, newValue) => {
-        console.log('handleSeekMouseUp', newValue);
         setSeeking(false);
         playerRef.current.seekTo((newValue / 100), 'fraction');
     }
@@ -654,12 +641,10 @@ const Room = (props) => {
     };
 
     const handleEnded = () => {
-        console.log('onEnded')
         setplaying(false);
     }
 
     const handleDuration = (duration) => {
-        console.log('onDuration', duration)
         setDuration(duration)
     }
 
@@ -688,7 +673,6 @@ const Room = (props) => {
     }
 
     const playOrPauseVideo = () => {
-        console.log('playOrPauseVideo');
         for (const peerRef of peersRef.current) {
             peerRef.peer.send(JSON.stringify({ type: "playOrPause" }));
         }
@@ -697,7 +681,6 @@ const Room = (props) => {
     }
 
     const seekChangeVideo = (e, newValue) => {
-        console.log('seekChangeVideo', newValue);
         for (const peerRef of peersRef.current) {
             peerRef.peer.send(JSON.stringify({ type: "seekChange", data: newValue }));
         }
@@ -706,7 +689,6 @@ const Room = (props) => {
     }
 
     const fastForwardVideo = () => {
-        console.log('fastForwardVideo');
         for (const peerRef of peersRef.current) {
             peerRef.peer.send(JSON.stringify({ type: "fastForward" }));
         }
@@ -715,7 +697,6 @@ const Room = (props) => {
     }
 
     const rewindVideo = () => {
-        console.log('rewindVideo');
         for (const peerRef of peersRef.current) {
             peerRef.peer.send(JSON.stringify({ type: "rewind" }));
         }
@@ -724,7 +705,6 @@ const Room = (props) => {
     }
 
     const playbackRateChangeVideo = (newValue) => {
-        console.log('playbackRateChangeVideo', newValue);
         for (const peerRef of peersRef.current) {
             peerRef.peer.send(JSON.stringify({ type: "playbackRateChange", data: newValue }));
         }
@@ -733,12 +713,8 @@ const Room = (props) => {
     }
 
     const loadVideo = () => {
-        console.log('ReactPlayer.canPlay(videoID)', ReactPlayer.canPlay(videoID));
         if (ReactPlayer.canPlay(videoID)) {
             for (const peerRef of peersRef.current) {
-                console.log('peerRef', peerRef);
-                console.log('peerRef connected', peerRef.peer.connected);
-                console.log('peerRef destroyed', peerRef.peer.destroyed);
                 peerRef.peer.send(JSON.stringify({ type: "newVideo", data: videoID }));
             }
             load(videoID);
@@ -746,9 +722,6 @@ const Room = (props) => {
         } else {
             setInfoSnackbar({ open: true, type: 'error', text: 'No playable content found at URL entered. Please try again', autoHideDuration: 6000 });
             for (const peerRef of peersRef.current) {
-                console.log('peerRef', peerRef);
-                console.log('peerRef connected', peerRef.peer.connected);
-                console.log('peerRef destroyed', peerRef.peer.destroyed);
                 peerRef.peer.send(JSON.stringify({ type: "newVideo", data: null }));
             }
             load(null);
@@ -757,14 +730,12 @@ const Room = (props) => {
     }
 
     const handleReactPlayerError = (e) => {
-        console.log('onError', e);
         setInfoSnackbar({ open: true, type: 'error', text: 'error', autoHideDuration: 3000 });
         gaEvent('ALERTS', `${roomID}`, `Player Error at ${moment().format('h:mm a')}`);
     }
 
     function handleData(data) {
         const parsed = JSON.parse(data);
-        console.log('handleData', parsed.type, parsed.data);
 
         if (parsed.type === "newVideo") {
             load(parsed.data);
@@ -819,11 +790,9 @@ const Room = (props) => {
         const url = window.location.href;
 
         navigator.clipboard.writeText(url).then(() => {
-            console.log('Async: Copying to clipboard was successful!', url);
             setInfoSnackbar({ open: true, type: 'success', text: 'URL Copied To Clipboard!', autoHideDuration: 3000 });
             gaEvent('ALERTS', `${roomID}`, `URL copy Success at ${moment().format('h:mm a')}`);
         }, (err) => {
-            console.error('Async: Could not copy text: ', err);
             gaEvent('ALERTS', `${roomID}`, `URL copy Error at ${moment().format('h:mm a')}`);
         });
     }

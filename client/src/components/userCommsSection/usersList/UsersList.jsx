@@ -27,11 +27,9 @@ const UsersList = (props) => {
         const url = window.location.href;
 
         navigator.clipboard.writeText(url).then(() => {
-            console.log('Async: Copying to clipboard was successful!', url);
             setOpenConfirmCopySnackbar(true);
             gaEvent('ALERTS', `${props.roomID}`, `URL copy Success`);
         }, (err) => {
-            console.error('Async: Could not copy text: ', err);
             gaEvent('ALERTS', `${props.roomID}`, `URL copy Error`);
         });
     }

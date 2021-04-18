@@ -68,12 +68,6 @@ io.on('connection', socket => {
             time: moment().format('h:mm a')
         };
         socket.to(payload.roomID).emit("message", messageObject);
-
-
-        console.log('all-users join room down ');
-        console.dir(users);
-        console.log('all-rooms join room down ');
-        console.dir(rooms);
     });
 
     socket.on('set user as host', (userToBeHost) => {
@@ -86,25 +80,19 @@ io.on('connection', socket => {
     })
 
     socket.on("sending signal", payload => {
-        /* console.log('sending signal' + users[payload.roomID]);
-        console.dir(users[payload.roomID]); */
-
         socket.emit("all users in room", users[payload.roomID]);
+
         io.to(payload.userToSignal).emit('user joined', { signal: payload.signal, callerID: payload.callerID, callerNickname: payload.callerNickname });
     });
 
     socket.on("returning signal", payload => {
-        /* console.log('returning signal' + users[payload.roomID]);
-        console.dir(users[payload.roomID]); */
-
         socket.emit("all users in room", users[payload.roomID]);
+
         io.to(payload.callerID).emit('receiving returned signal', { signal: payload.signal, id: socket.id });
     });
 
     socket.on('send message', body => {
-        console.log('send message')
-        console.dir(body)
-        io.emit('message', body)
+        io.in(body.roomID).emit('message', body)
     })
 
     socket.on('all users in room', () => {
@@ -120,15 +108,6 @@ io.on('connection', socket => {
             room = room.filter(user => user.id !== socket.id);
             users[roomID] = room;
         }
-
-        console.log('all-users disconnect down ');
-        console.dir(users[roomID]);
-        console.log('all-rooms disconnect down ');
-        console.dir(rooms);
-        console.log('socketToRoom disconnect down ');
-        console.dir(socketToRoom);
-        console.log('roomID disconnect down ');
-        console.dir(roomID);
 
         const messageObject = {
             body: `${socket.nickname} just left the chat.`,
@@ -153,17 +132,12 @@ app.post('/', (req, res) => {
 
     rooms[roomID] = { users: {}, roomName, roomComms, roomType }
 
-    console.dir(rooms);
-    console.log('rooms up, users down');
-    console.dir(users);
-
     res.send(`POST request received.`);
 });
 
 app.get('/api/room/:roomID', (req, res) => {
     const { roomID } = req.params;
     let roomConfig = {};
-    console.log('/room/:roomID hostRoom');
 
     for (room in rooms) {
         if (room === roomID) {
